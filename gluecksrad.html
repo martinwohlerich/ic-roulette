@@ -167,12 +167,19 @@
     box-shadow:0 10px 26px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.06);
   }
   .panel h3{
-    margin:0 0 10px;
+    margin:0;
     color:var(--gold);
     font-size:1rem;
     letter-spacing:1px;
+  }
+  .panel-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
     border-bottom:1px solid rgba(255,180,0,0.25);
     padding-bottom:8px;
+    margin-bottom:10px;
   }
   .panel ul{
     list-style:none;
@@ -187,15 +194,16 @@
     gap:8px;
   }
   .panel li span.idx{color:#8a93b8;min-width:28px;}
-  .panel li button.tiny{
+  .panel button.tiny{
     padding:3px 10px;
     font-size:0.75rem;
     border-radius:14px;
     background:rgba(255,180,0,0.15);
     color:var(--gold);
     border:1px solid rgba(255,180,0,0.4);
+    white-space:nowrap;
   }
-  .panel li button.tiny:hover{background:rgba(255,180,0,0.3);}
+  .panel button.tiny:hover{background:rgba(255,180,0,0.3);}
   .panel::-webkit-scrollbar{width:8px;}
   .panel::-webkit-scrollbar-thumb{background:rgba(255,180,0,0.3);border-radius:4px;}
 
@@ -282,11 +290,16 @@
 
   <div class="panels">
     <div class="panel">
-      <h3>Verlauf</h3>
+      <div class="panel-header">
+        <h3>Verlauf</h3>
+      </div>
       <ul id="historyList"><li style="color:#8a93b8">Noch keine Drehung</li></ul>
     </div>
     <div class="panel">
-      <h3>Ausgeschlossene Programme</h3>
+      <div class="panel-header">
+        <h3>Ausgeschlossene Programme</h3>
+        <button class="tiny" id="clearExcludedAll">alle entfernen</button>
+      </div>
       <ul id="excludedList"><li style="color:#8a93b8">Keine ausgeschlossen</li></ul>
     </div>
   </div>
@@ -771,12 +784,14 @@ overlay.addEventListener('click',(e)=>{
 
 spinBtn.addEventListener('click', spin);
 
-document.getElementById('resetExclude').addEventListener('click',()=>{
+function clearAllExcluded(){
   excluded = [];
   localStorage.setItem('ic_excluded', JSON.stringify(excluded));
   renderExcluded();
   drawWheel();
-});
+}
+document.getElementById('resetExclude').addEventListener('click', clearAllExcluded);
+document.getElementById('clearExcludedAll').addEventListener('click', clearAllExcluded);
 
 document.getElementById('clearHistory').addEventListener('click',()=>{
   history = [];
