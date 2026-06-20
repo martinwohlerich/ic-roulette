@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>IC Glücksrad</title>
+<style>
+  :root{
+    --navy:#0c1530;
+    --navy2:#182245;
+    --gold:#FFB400;
+    --gold2:#FF6600;
+    --cream:#f5f0e3;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255,180,0,0.07) 0%, transparent 35%),
+      radial-gradient(circle at 85% 78%, rgba(255,102,0,0.06) 0%, transparent 38%),
+      radial-gradient(circle at 50% 20%, #1c2a55 0%, var(--navy) 60%, #060912 100%);
+    color:var(--cream);
+    font-family:'Trebuchet MS', 'Segoe UI', sans-serif;
+    overflow-x:hidden;
+  }
+  .app{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  h1{
+    font-size:2.2rem;
+    letter-spacing:2px;
+    margin:8px 0 4px;
+    background:linear-gradient(90deg,var(--gold),var(--gold2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 0 30px rgba(255,180,0,0.25);
+  }
+  .subtitle{
+    color:#b9c2e0;
+    margin-bottom:18px;
+    font-size:0.95rem;
+    letter-spacing:1px;
+  }
+  .wheel-wrap{
+    position:relative;
+    width:min(86vw, 620px);
+    height:min(86vw, 620px);
+    margin-top:10px;
+    padding:14px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 30% 22%, #5a4112 0%, #2c1f08 40%, #1a1204 70%, #0c0903 100%);
+    box-shadow:
+      0 0 0 2px rgba(255,210,120,0.25),
+      0 25px 60px rgba(0,0,0,0.65),
+      inset 0 2px 6px rgba(255,225,160,0.25),
+      inset 0 -8px 22px rgba(0,0,0,0.6);
+  }
+  .wheel-wrap::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    pointer-events:none;
+    background:conic-gradient(from 220deg, rgba(255,255,255,0.16), transparent 28%, transparent 70%, rgba(255,255,255,0.08));
+    mix-blend-mode:screen;
+    opacity:0.55;
+  }
+  canvas{
+    position:relative;
+    display:block;
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    background:var(--navy2);
+    box-shadow:0 0 0 1px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,0,0,0.5);
+  }
+  .hub{
+    position:absolute;
+    top:50%;left:50%;
+    width:10%;height:10%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #fff6da 0%, #ffe9a8 18%, var(--gold) 55%, var(--gold2) 100%);
+    border:3px solid #3a2a00;
+    box-shadow:
+      0 0 22px rgba(255,180,0,0.65),
+      0 3px 6px rgba(0,0,0,0.5),
+      inset 0 2px 4px rgba(255,255,255,0.6),
+      inset 0 -6px 10px rgba(0,0,0,0.45);
+    z-index:4;
+  }
+  .hub::after{
+    content:"";
+    position:absolute;
+    inset:22%;
+    border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, rgba(255,255,255,0.85), rgba(255,255,255,0) 60%);
+  }
+  .controls{
+    display:flex;
+    gap:14px;
+    margin-top:26px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  button{
+    font-family:inherit;
+    font-size:1rem;
+    font-weight:bold;
+    letter-spacing:1px;
+    padding:14px 30px;
+    border:none;
+    border-radius:30px;
+    cursor:pointer;
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+  button:active{transform:scale(0.96);}
+  #spinBtn{
+    background:linear-gradient(135deg,#ffd76a,var(--gold) 45%,var(--gold2));
+    color:#1a0f00;
+    box-shadow:
+      0 8px 20px rgba(255,140,0,0.45),
+      inset 0 2px 2px rgba(255,255,255,0.6),
+      inset 0 -4px 8px rgba(120,60,0,0.35);
+    font-size:1.1rem;
+    padding:16px 44px;
+  }
+  #spinBtn:hover{box-shadow:
+      0 10px 26px rgba(255,140,0,0.6),
+      inset 0 2px 2px rgba(255,255,255,0.7),
+      inset 0 -4px 8px rgba(120,60,0,0.35);
+  }
+  #spinBtn:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+  }
+  .secondary{
+    background:rgba(255,255,255,0.07);
+    color:var(--cream);
+    border:1px solid rgba(255,180,0,0.4);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,0.08);
+  }
+  .secondary:hover{background:rgba(255,255,255,0.14);}
+
+  .panels{
+    display:flex;
+    gap:24px;
+    margin-top:34px;
+    width:100%;
+    max-width:1100px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .panel{
+    background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border:1px solid rgba(255,180,0,0.25);
+    border-radius:16px;
+    padding:18px 20px;
+    width:340px;
+    max-height:340px;
+    overflow-y:auto;
+    box-shadow:0 10px 26px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.06);
+  }
+  .panel h3{
+    margin:0 0 10px;
+    color:var(--gold);
+    font-size:1rem;
+    letter-spacing:1px;
+    border-bottom:1px solid rgba(255,180,0,0.25);
+    padding-bottom:8px;
+  }
+  .panel ul{
+    list-style:none;
+    margin:0;padding:0;
+    font-size:0.9rem;
+  }
+  .panel li{
+    padding:6px 4px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .panel li span.idx{color:#8a93b8;min-width:28px;}
+  .panel li button.tiny{
+    padding:3px 10px;
+    font-size:0.75rem;
+    border-radius:14px;
+    background:rgba(255,180,0,0.15);
+    color:var(--gold);
+    border:1px solid rgba(255,180,0,0.4);
+  }
+  .panel li button.tiny:hover{background:rgba(255,180,0,0.3);}
+  .panel::-webkit-scrollbar{width:8px;}
+  .panel::-webkit-scrollbar-thumb{background:rgba(255,180,0,0.3);border-radius:4px;}
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(5,8,20,0.85);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.3s;
+  }
+  .overlay.show{opacity:1;pointer-events:auto;}
+  .result-card{
+    background:
+      radial-gradient(circle at 30% 0%, rgba(255,180,0,0.12), transparent 55%),
+      linear-gradient(160deg,#1c2a55,#0c1530);
+    border:2px solid var(--gold);
+    border-radius:24px;
+    padding:50px 60px;
+    text-align:center;
+    box-shadow:0 0 60px rgba(255,180,0,0.35), 0 30px 70px rgba(0,0,0,0.6);
+    transform:scale(0.8);
+    transition:transform 0.35s;
+    max-width:90vw;
+  }
+  .overlay.show .result-card{transform:scale(1);}
+  .result-card .label{
+    color:#b9c2e0;
+    letter-spacing:2px;
+    font-size:0.85rem;
+    margin-bottom:10px;
+  }
+  .result-card .num{
+    color:var(--gold2);
+    font-size:1.4rem;
+    font-weight:bold;
+    margin-bottom:6px;
+  }
+  .result-card .name{
+    font-size:2.1rem;
+    font-weight:bold;
+    color:var(--cream);
+    margin-bottom:24px;
+    max-width:560px;
+    line-height:1.3;
+  }
+  .result-card button{
+    background:linear-gradient(135deg,var(--gold),var(--gold2));
+    color:#1a0f00;
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#b9c2e0;
+    font-size:0.85rem;
+    margin-top:14px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Instant Change Glücksrad</h1>
+  <div class="subtitle">138 Programme · wie beim Roulette: die Kugel entscheidet</div>
+
+  <div class="wheel-wrap">
+    <canvas id="wheel" width="1200" height="1200"></canvas>
+    <div class="hub"></div>
+  </div>
+
+  <div class="controls">
+    <button id="spinBtn">🎡 Drehen</button>
+    <button class="secondary" id="resetExclude">Ausschlüsse zurücksetzen</button>
+    <button class="secondary" id="clearHistory">Verlauf löschen</button>
+  </div>
+  <div class="checkbox-row">
+    <input type="checkbox" id="autoExclude">
+    <label for="autoExclude">Gezogenes Programm automatisch ausschließen</label>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h3>Verlauf (zuletzt zuerst)</h3>
+      <ul id="historyList"><li style="color:#8a93b8">Noch keine Drehung</li></ul>
+    </div>
+    <div class="panel">
+      <h3>Ausgeschlossene Programme</h3>
+      <ul id="excludedList"><li style="color:#8a93b8">Keine ausgeschlossen</li></ul>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <div class="label">DAS PROGRAMM IST</div>
+    <div class="num" id="resultNum"></div>
+    <div class="name" id="resultName"></div>
+    <button id="closeOverlay">Schließen</button>
+  </div>
+</div>
+
+<script>
+const PROGRAMS = [
+"Zukunft","Vergangenheit","Gegenwart","Absolute Gesundheit","Fülle","Wunder","Innere Weisheit","Magie",
+"Erfülle Dir Deine Träume","Lass es geschehen","Sei nicht perfekt, mach es einfach","Salespower",
+"Positive Verrücktheit - für Leute, die auf Überraschungen stehen","Mach mehr","Ich bin","Erwarte das Gute",
+"Vertrauen","Spitzenleistung","Fokus","Willenskraft","Freude","Freundschaft","Quelle des Lebens","Abgrenzung",
+"Größe","Weiblichkeit","Transformation","Mut","Bewusstseinserweiterung","Sexuelle Kraft","No perfection",
+"Instinkt schärfen","Manifestation","Anti-Allergie","Frei von Schuldgefühlen","Neue Aura","Volles Potenzial",
+"Freiheit","Massage","Aufwachen","Selbstbewusstsein","Sucht","Selbstliebe","Nerven","Selbstvertrauen",
+"Ur-Vertrauen","Partnerschaft verbessern","Gesunde Haut","Muskelaufbau","Dominanz","Macht","Erfolg",
+"Den richtigen Partner finden","B-Programm (Besetzungen von Fremd-Energie)","Positives Weltbild",
+"Keine Grenzen","Stress reduzieren","Burnout","Schlaf","Verbessere die Schlafzeiten","Pure Liebe - Herz öffnen",
+"Schmerzen","Organe","Ausdauer, Kondition","Beharrlichkeit","Die Kraft der Jugend – Jungbrunnen","Frieden",
+"Reinigung und Schutz (der Energie)","Positive Gefühle","Positive Anziehung","Ausstrahlung",
+"Befreiung von Drama","Dankbarkeit","Loslassen","Verbindung mit der Natur","Männlichkeit",
+"Gewissheit (positiver Ausgang)","Begeisterung","Positive Absicht erkennen","Mut, sich zu zeigen",
+"Anerkennung","Prioritäten setzen","Läuterung, Klärung","Lösung von Verstrickungen","Stärke Deine Stärken",
+"Positive Veränderung","Öffnung für Herzensweg","Unbegrenzter Reichtum - Geld","Pack es an",
+"Kristallschwingung - auch schwierige Themen lösen / harte Schalen","Trauma","Mutter","Vater","Kinder",
+"Verwandte","Versöhnung","Kinderwunsch erfüllen","Körperfett reduzieren","Energetische Helfer aktivieren",
+"Sich sicher fühlen außerhalb der Komfortzone","Selbstsabotage stoppen","Anbindung an Dein höheres Selbst",
+"Wirbelsäule ausrichten","Augen","Zellen","Pferd","Hund","Katze","Harmonisierung",
+"Antioxidantien (gegen Entzündungen)","Vogel","Zähne","Lernpower","Ohren","Entgiftung","Höchste Schwingung",
+"Anti Virus","Gesunde Knochen","Aktivierung der Zirbeldrüse","Hormone","Paarhufer","Anti Depression",
+"Stimme","Stoffwechsel","DNA-Programm","Angst lösen","Nase","Fische","Vergebung","Kreativität","Selbstwert",
+"Selbstverantwortung","Immunsystem Booster","Magen-Darm","Selbstachtung","Liebe zeigen und zulassen",
+"Annehmen und Ernten","Dopamin"
+];
+
+const COLORS = ["#182245","#23306b","#3a1f00","#5c3a00","#1c2a55","#2b1a45"];
+const GOLD = "#FFB400";
+
+function shadeHex(hex, percent){
+  const num = parseInt(hex.slice(1),16);
+  let r = (num>>16) + Math.round(2.55*percent);
+  let g = ((num>>8)&0x00FF) + Math.round(2.55*percent);
+  let b = (num&0x0000FF) + Math.round(2.55*percent);
+  r = Math.max(0,Math.min(255,r));
+  g = Math.max(0,Math.min(255,g));
+  b = Math.max(0,Math.min(255,b));
+  return `rgb(${r},${g},${b})`;
+}
+
+let excluded = JSON.parse(localStorage.getItem('ic_excluded') || "[]");
+let history = JSON.parse(localStorage.getItem('ic_history') || "[]");
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const size = canvas.width;
+const center = size/2;
+const radius = size/2 - 6;     // outer edge of the whole wheel, incl. rim track
+const wheelR = radius*0.80;    // radius of the numbered pocket ring
+
+let spinning = false;
+
+// ball state: angle (accumulates across spins, not normalized) + radius factor (0..1 of `radius`)
+let ballAngle = -Math.PI/2;
+let ballRadiusFactor = 0.97; // starts out on the rim track
+let ballVisible = false;
+let highlightSlot = null; // slot index (within current activeIndices()) to glow after landing
+
+function activeIndices(){
+  return PROGRAMS.map((_,i)=>i).filter(i=>!excluded.includes(i));
+}
+
+function drawWheel(){
+  const indices = activeIndices();
+  const n = indices.length;
+  ctx.clearRect(0,0,size,size);
+
+  if(n===0){
+    ctx.fillStyle="#182245";
+    ctx.beginPath();
+    ctx.arc(center,center,wheelR,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle=GOLD;
+    ctx.font="bold 36px sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("Alle Programme",center,center-20);
+    ctx.fillText("ausgeschlossen",center,center+20);
+    return;
+  }
+
+  const arc = (Math.PI*2)/n;
+  ctx.save();
+  ctx.translate(center,center);
+
+  // per-color radial gradients give the pockets a domed, lacquered look
+  const pocketGrads = COLORS.map(c=>{
+    const g = ctx.createRadialGradient(0,0,wheelR*0.1,0,0,wheelR);
+    g.addColorStop(0, shadeHex(c,22));
+    g.addColorStop(0.72, c);
+    g.addColorStop(1, shadeHex(c,-26));
+    return g;
+  });
+  const goldGrad = ctx.createRadialGradient(0,0,wheelR*0.1,0,0,wheelR);
+  goldGrad.addColorStop(0,"#fff3c4");
+  goldGrad.addColorStop(0.6,GOLD);
+  goldGrad.addColorStop(1,"#b97a00");
+
+  indices.forEach((progIdx,i)=>{
+    const startAngle = i*arc;
+    const endAngle = startAngle+arc;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,wheelR,startAngle,endAngle);
+    ctx.closePath();
+    ctx.fillStyle = (highlightSlot===i && !spinning) ? goldGrad : pocketGrads[i % COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle="rgba(255,200,90,0.22)";
+    ctx.lineWidth=1;
+    ctx.stroke();
+
+    // text
+    ctx.save();
+    ctx.rotate(startAngle+arc/2);
+    ctx.textAlign="right";
+    ctx.textBaseline="middle";
+    const fontSize = n>90?9: n>50?11: n>25?13:16;
+    ctx.font = `${fontSize}px 'Trebuchet MS', sans-serif`;
+    ctx.fillStyle = (highlightSlot===i && !spinning) ? "#1a0f00" : "#f5f0e3";
+    let label = PROGRAMS[progIdx];
+    const maxLen = n>90?26:n>50?34:46;
+    if(label.length>maxLen) label = label.slice(0,maxLen-1)+"…";
+    ctx.fillText(`${progIdx+1}. ${label}`, wheelR-10, 0);
+    ctx.restore();
+  });
+
+  // soft vignette inside the pocket disk for extra depth
+  const pocketVignette = ctx.createRadialGradient(0,0,wheelR*0.55,0,0,wheelR);
+  pocketVignette.addColorStop(0,"rgba(0,0,0,0)");
+  pocketVignette.addColorStop(1,"rgba(0,0,0,0.28)");
+  ctx.beginPath();
+  ctx.arc(0,0,wheelR,0,Math.PI*2);
+  ctx.fillStyle = pocketVignette;
+  ctx.fill();
+
+  // groove between pockets and outer rim track
+  ctx.beginPath();
+  ctx.arc(0,0,wheelR,0,Math.PI*2);
+  ctx.lineWidth=5;
+  ctx.strokeStyle="#3a2a00";
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0,0,wheelR+3,0,Math.PI*2);
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(255,200,90,0.6)";
+  ctx.stroke();
+
+  // outer rim track (where the ball races before falling into the pockets)
+  const rimGrad = ctx.createRadialGradient(0,0,wheelR,0,0,radius);
+  rimGrad.addColorStop(0,"#2a1f06");
+  rimGrad.addColorStop(0.42,"#5a3e0a");
+  rimGrad.addColorStop(0.55,"#83590e");
+  rimGrad.addColorStop(0.7,"#43300a");
+  rimGrad.addColorStop(1,"#1a1204");
+  ctx.beginPath();
+  ctx.arc(0,0,radius,0,Math.PI*2);
+  ctx.arc(0,0,wheelR+4,0,Math.PI*2,true);
+  ctx.closePath();
+  ctx.fillStyle = rimGrad;
+  ctx.fill();
+
+  // glossy specular sheen across the upper half of the rim, like polished wood/metal
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0,0,radius,0,Math.PI*2);
+  ctx.arc(0,0,wheelR+4,0,Math.PI*2,true);
+  ctx.closePath();
+  ctx.clip();
+  const sheen = ctx.createLinearGradient(-radius,-radius,radius,-radius*0.2);
+  sheen.addColorStop(0,"rgba(255,255,255,0)");
+  sheen.addColorStop(0.5,"rgba(255,240,200,0.18)");
+  sheen.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.fillStyle = sheen;
+  ctx.fillRect(-radius,-radius,radius*2,radius*1.1);
+  ctx.restore();
+
+  // deflector studs around the rim track, each a tiny domed highlight
+  const studCount = 32;
+  for(let s=0;s<studCount;s++){
+    const a = (s/studCount)*Math.PI*2;
+    const sx = Math.cos(a)*(radius*0.91);
+    const sy = Math.sin(a)*(radius*0.91);
+    const studR = size*0.0042;
+    const studGrad = ctx.createRadialGradient(sx-studR*0.4, sy-studR*0.4, studR*0.1, sx, sy, studR);
+    studGrad.addColorStop(0,"#fff6da");
+    studGrad.addColorStop(0.55,"rgba(255,200,100,0.7)");
+    studGrad.addColorStop(1,"rgba(255,180,0,0.05)");
+    ctx.beginPath();
+    ctx.arc(sx,sy,studR,0,Math.PI*2);
+    ctx.fillStyle = studGrad;
+    ctx.fill();
+  }
+
+  // outer ring border, layered for a bevelled metal-bezel look
+  ctx.beginPath();
+  ctx.arc(0,0,radius+2,0,Math.PI*2);
+  ctx.lineWidth=2;
+  ctx.strokeStyle="rgba(0,0,0,0.6)";
+  ctx.stroke();
+  const borderGrad = ctx.createLinearGradient(-radius,-radius,radius,radius);
+  borderGrad.addColorStop(0,"#fff3c4");
+  borderGrad.addColorStop(0.5,GOLD);
+  borderGrad.addColorStop(1,"#a86c00");
+  ctx.beginPath();
+  ctx.arc(0,0,radius,0,Math.PI*2);
+  ctx.lineWidth=6;
+  ctx.strokeStyle=borderGrad;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0,0,radius-4,0,Math.PI*2);
+  ctx.lineWidth=1.5;
+  ctx.strokeStyle="rgba(255,255,255,0.35)";
+  ctx.stroke();
+
+  // ball
+  if(ballVisible){
+    const bx = Math.cos(ballAngle)*radius*ballRadiusFactor;
+    const by = Math.sin(ballAngle)*radius*ballRadiusFactor;
+    const ballR = size*0.013;
+    const grad = ctx.createRadialGradient(bx-ballR*0.4, by-ballR*0.4, ballR*0.2, bx, by, ballR);
+    grad.addColorStop(0,"#ffffff");
+    grad.addColorStop(0.6,"#f3e6c8");
+    grad.addColorStop(1,"#caa24a");
+    ctx.beginPath();
+    ctx.arc(bx,by,ballR,0,Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = ballR*0.8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
+drawWheel();
+
+// --- Sound ---
+let audioCtx;
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+let noiseBuffer = null;
+function getNoiseBuffer(ac){
+  if(noiseBuffer) return noiseBuffer;
+  const len = ac.sampleRate * 0.08;
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<len;i++) data[i] = Math.random()*2-1;
+  noiseBuffer = buf;
+  return buf;
+}
+// Roulette ball sound: one consistent "ball on wood" click whose pitch and weight
+// scale continuously with speed - bright and light when fast, dark and heavy when slow.
+// speed: 1 = racing fast on the rim, 0 = barely moving / settling into the pocket.
+function tick(strength=1, speed=1){
+  try{
+    const ac = getAudioCtx();
+    const now = ac.currentTime;
+    const s = Math.max(0, Math.min(1, speed));
+
+    // noise body: bandpass sweeps from bright/thin (fast) to dull/thick (slow)
+    const noise = ac.createBufferSource();
+    noise.buffer = getNoiseBuffer(ac);
+    const bp = ac.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 750 + s*3300;
+    bp.Q.value = 0.9 + (1-s)*0.5;
+    const noiseDecay = 0.012 + (1-s)*0.045;
+    const noiseGain = ac.createGain();
+    noiseGain.gain.setValueAtTime((0.1 + 0.09*(1-s))*strength, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0005, now+noiseDecay);
+    noise.connect(bp).connect(noiseGain).connect(ac.destination);
+    noise.start(now);
+    noise.stop(now+noiseDecay+0.01);
+
+    // tonal body: same triangle voice throughout, just sliding down in pitch and lasting longer as it slows
+    const osc = ac.createOscillator();
+    const oscGain = ac.createGain();
+    osc.type = "triangle";
+    const startFreq = 220 + s*1900;
+    const endFreq = startFreq*0.55;
+    const oscDecay = 0.016 + (1-s)*0.07;
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, now+oscDecay);
+    oscGain.gain.setValueAtTime((0.05 + 0.11*(1-s))*strength, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.0005, now+oscDecay);
+    osc.connect(oscGain).connect(ac.destination);
+    osc.start(now);
+    osc.stop(now+oscDecay+0.01);
+  }catch(e){}
+}
+
+// Tiny rattle right after landing - the ball wobbling itself to a full stop in the pocket
+function playSettleRattle(){
+  const delays =     [0,    55,   125,  215,  330];
+  const strengths =  [0.55, 0.4,  0.28, 0.17, 0.08];
+  delays.forEach((d,i)=>{
+    setTimeout(()=>tick(strengths[i], 0.08), d);
+  });
+}
+
+// Warm bell-like chime fanfare for the result
+function fanfare(){
+  try{
+    const ac = getAudioCtx();
+    const masterGain = ac.createGain();
+    masterGain.gain.value = 1;
+    masterGain.connect(ac.destination);
+
+    const notes = [523.25,659.25,783.99,1046.5,1318.5];
+    notes.forEach((f,i)=>{
+      const t = ac.currentTime + i*0.16;
+      // fundamental + soft overtone for bell-like timbre
+      [1, 2.0, 3.0].forEach((mult,h)=>{
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = "sine";
+        osc.frequency.value = f*mult;
+        const peak = (h===0?0.16:0.05/mult);
+        gain.gain.setValueAtTime(0,t);
+        gain.gain.linearRampToValueAtTime(peak, t+0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0006, t+0.9);
+        osc.connect(gain).connect(masterGain);
+        osc.start(t);
+        osc.stop(t+0.95);
+      });
+    });
+  }catch(e){}
+}
+
+// --- Spin logic ---
+const spinBtn = document.getElementById('spinBtn');
+const overlay = document.getElementById('overlay');
+const resultNum = document.getElementById('resultNum');
+const resultName = document.getElementById('resultName');
+const autoExclude = document.getElementById('autoExclude');
+
+function spin(){
+  if(spinning) return;
+  const indices = activeIndices();
+  if(indices.length===0) return;
+  spinning = true;
+  spinBtn.disabled = true;
+  ballVisible = true;
+  highlightSlot = null;
+
+  const n = indices.length;
+  const arc = (Math.PI*2)/n;
+  const winnerSlot = Math.floor(Math.random()*n);
+  const winnerProgIdx = indices[winnerSlot];
+
+  // the ball must come to rest exactly on the winning slice's center angle
+  const sliceCenterAngle = winnerSlot*arc + arc/2;
+  const laps = 8 + Math.floor(Math.random()*5); // 8-12 laps around the rim
+  const currentMod = ((ballAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  let deltaForward = sliceCenterAngle - currentMod;
+  deltaForward = ((deltaForward % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  const totalDelta = laps*Math.PI*2 + deltaForward;
+
+  const duration = 5200 + Math.random()*900;
+  const startTime = performance.now();
+  const startAngle = ballAngle;
+  const startRadiusFactor = ballRadiusFactor;
+
+  let lastTickSlot = -1;
+
+  function easeOutQuart(t){ return 1 - Math.pow(1-t,4); }
+
+  // ball races on the outer rim track while fast, then drops into the pockets near the end
+  function radiusAt(t){
+    const outer = 0.965; // out on the rim track
+    const inner = 0.72;  // resting depth inside the pockets
+    if(t < 0.62) return outer;
+    const p = (t-0.62)/0.38;
+    const eased = 1 - Math.pow(1-p,3);
+    const wobble = Math.sin(p*Math.PI*7) * 0.012 * (1-p);
+    return outer - (outer-inner)*eased + wobble;
+  }
+
+  let dropTickCounter = 0;
+  let nextClickTime = startTime; // drives the rolling click-train
+
+  // one continuous speed curve (1 = fast, 0 = stopped) used by the whole spin,
+  // so the rim clicks and the drop knocks are the same sound just slowing down together
+  function speedAt(t){ return Math.pow(1-t, 1.8); }
+
+  function animate(now){
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed/duration,1);
+    const eased = easeOutQuart(t);
+    ballAngle = startAngle + totalDelta*eased;
+    ballRadiusFactor = radiusAt(t);
+    drawWheel();
+
+    const speedNorm = speedAt(t);
+
+    if(t < 0.62){
+      // rolling click-train: each "click" is the ball passing a ridge on the rim.
+      // interval shrinks as the ball speeds up, grows as it slows down - real rolling cadence.
+      if(now >= nextClickTime){
+        const minInterval = 16, maxInterval = 140;
+        const interval = minInterval + (maxInterval-minInterval)*(1-speedNorm);
+        nextClickTime = now + interval*(0.85+Math.random()*0.3);
+        const strength = 0.35 + speedNorm*0.65;
+        tick(strength, speedNorm);
+      }
+    }
+
+    // same click, now tied to slice crossings as the ball bounces into the pockets and settles
+    const normalized = ((ballAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+    const currentSlot = Math.floor(normalized/arc);
+    if(t >= 0.62 && currentSlot !== lastTickSlot){
+      lastTickSlot = currentSlot;
+      const strength = 0.25 + 0.75*speedNorm;
+      dropTickCounter++;
+      if(dropTickCounter % 3 === 0) tick(strength, speedNorm);
+    }
+    lastTickSlot = currentSlot;
+
+    if(t<1){
+      requestAnimationFrame(animate);
+    }else{
+      ballAngle = startAngle + totalDelta; // lock exactly onto the slice center
+      ballRadiusFactor = 0.72;
+      highlightSlot = winnerSlot;
+      drawWheel();
+      spinning = false;
+      spinBtn.disabled = false;
+      playSettleRattle();
+      onSpinComplete(winnerProgIdx);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function onSpinComplete(progIdx){
+  fanfare();
+  resultNum.textContent = `#${progIdx+1}`;
+  resultName.textContent = PROGRAMS[progIdx];
+  overlay.classList.add('show');
+
+  const entry = {idx:progIdx, name:PROGRAMS[progIdx], time:new Date().toLocaleString('de-DE')};
+  history.unshift(entry);
+  localStorage.setItem('ic_history', JSON.stringify(history));
+  renderHistory();
+
+  if(autoExclude.checked){
+    if(!excluded.includes(progIdx)){
+      excluded.push(progIdx);
+      localStorage.setItem('ic_excluded', JSON.stringify(excluded));
+      renderExcluded();
+      drawWheel();
+    }
+  }
+}
+
+document.getElementById('closeOverlay').addEventListener('click',()=>{
+  overlay.classList.remove('show');
+});
+overlay.addEventListener('click',(e)=>{
+  if(e.target===overlay) overlay.classList.remove('show');
+});
+
+spinBtn.addEventListener('click', spin);
+
+document.getElementById('resetExclude').addEventListener('click',()=>{
+  excluded = [];
+  localStorage.setItem('ic_excluded', JSON.stringify(excluded));
+  renderExcluded();
+  drawWheel();
+});
+
+document.getElementById('clearHistory').addEventListener('click',()=>{
+  history = [];
+  localStorage.setItem('ic_history', JSON.stringify(history));
+  renderHistory();
+});
+
+function renderHistory(){
+  const ul = document.getElementById('historyList');
+  if(history.length===0){
+    ul.innerHTML = '<li style="color:#8a93b8">Noch keine Drehung</li>';
+    return;
+  }
+  ul.innerHTML = history.map(h=>`<li><span><span class="idx">#${h.idx+1}</span>${h.name}</span><span style="color:#8a93b8;font-size:0.78rem">${h.time}</span></li>`).join('');
+}
+
+function renderExcluded(){
+  const ul = document.getElementById('excludedList');
+  if(excluded.length===0){
+    ul.innerHTML = '<li style="color:#8a93b8">Keine ausgeschlossen</li>';
+    return;
+  }
+  const sorted = [...excluded].sort((a,b)=>a-b);
+  ul.innerHTML = sorted.map(i=>`<li><span><span class="idx">#${i+1}</span>${PROGRAMS[i]}</span><button class="tiny" data-idx="${i}">zurück</button></li>`).join('');
+  ul.querySelectorAll('button.tiny').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const idx = parseInt(btn.dataset.idx,10);
+      excluded = excluded.filter(x=>x!==idx);
+      localStorage.setItem('ic_excluded', JSON.stringify(excluded));
+      renderExcluded();
+      drawWheel();
+    });
+  });
+}
+
+renderHistory();
+renderExcluded();
+</script>
+</body>
+</html>
