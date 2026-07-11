@@ -368,6 +368,10 @@
     <input type="checkbox" id="autoExclude">
     <label for="autoExclude">Gezogenes Programm automatisch ausschließen</label>
   </div>
+  <div class="checkbox-row">
+    <input type="checkbox" id="excludeAnimals">
+    <label for="excludeAnimals">Tierprogramme ausschließen (106, 107, 108, 111, 121, 128)</label>
+  </div>
 
   <div class="panels">
     <div class="panel">
@@ -892,6 +896,33 @@ function clearAllExcluded(){
 }
 document.getElementById('resetExclude').addEventListener('click', clearAllExcluded);
 document.getElementById('clearExcludedAll').addEventListener('click', clearAllExcluded);
+
+const ANIMAL_SLOTS = [106,107,108,111,121,128];
+const excludeAnimalsChk = document.getElementById('excludeAnimals');
+let excludeAnimals = JSON.parse(localStorage.getItem('ic_exclude_animals') || 'false');
+excludeAnimalsChk.checked = excludeAnimals;
+
+function applyAnimalExclusion(){
+  if(excludeAnimals){
+    ANIMAL_SLOTS.forEach(n => {
+      if(!excluded.includes(n)) excluded.push(n);
+    });
+  } else {
+    excluded = excluded.filter(n => !ANIMAL_SLOTS.includes(n));
+  }
+  localStorage.setItem('ic_excluded', JSON.stringify(excluded));
+  renderExcluded();
+  drawWheel();
+}
+
+excludeAnimalsChk.addEventListener('change', () => {
+  excludeAnimals = excludeAnimalsChk.checked;
+  localStorage.setItem('ic_exclude_animals', JSON.stringify(excludeAnimals));
+  applyAnimalExclusion();
+});
+
+// Apply on load
+if(excludeAnimals) applyAnimalExclusion();
 
 document.getElementById('clearHistory').addEventListener('click',()=>{
   history = [];
