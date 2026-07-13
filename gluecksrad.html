@@ -900,17 +900,17 @@ document.getElementById('resetExclude').addEventListener('click', clearAllExclud
 document.getElementById('clearExcludedAll').addEventListener('click', clearAllExcluded);
 
 const ANIMAL_SLOTS = [105,106,107,110,120,127]; // 0-based indices (program# - 1)
+const ANIMAL_SLOTS_LEGACY = [106,107,108,111,121,128]; // old wrong indices, clean up if present
 const excludeAnimalsChk = document.getElementById('excludeAnimals');
 let excludeAnimals = JSON.parse(localStorage.getItem('ic_exclude_animals') || 'false');
 excludeAnimalsChk.checked = excludeAnimals;
 
 function applyAnimalExclusion(){
+  // always remove both old (legacy) and current animal indices first
+  const allAnimal = [...new Set([...ANIMAL_SLOTS, ...ANIMAL_SLOTS_LEGACY])];
+  excluded = excluded.filter(n => !allAnimal.includes(n));
   if(excludeAnimals){
-    ANIMAL_SLOTS.forEach(n => {
-      if(!excluded.includes(n)) excluded.push(n);
-    });
-  } else {
-    excluded = excluded.filter(n => !ANIMAL_SLOTS.includes(n));
+    ANIMAL_SLOTS.forEach(n => { if(!excluded.includes(n)) excluded.push(n); });
   }
   localStorage.setItem('ic_excluded', JSON.stringify(excluded));
   renderExcluded();
