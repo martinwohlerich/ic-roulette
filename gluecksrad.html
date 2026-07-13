@@ -899,7 +899,7 @@ function clearAllExcluded(){
 document.getElementById('resetExclude').addEventListener('click', clearAllExcluded);
 document.getElementById('clearExcludedAll').addEventListener('click', clearAllExcluded);
 
-const ANIMAL_SLOTS = [106,107,108,111,121,128];
+const ANIMAL_SLOTS = [105,106,107,110,120,127]; // 0-based indices (program# - 1)
 const excludeAnimalsChk = document.getElementById('excludeAnimals');
 let excludeAnimals = JSON.parse(localStorage.getItem('ic_exclude_animals') || 'false');
 excludeAnimalsChk.checked = excludeAnimals;
